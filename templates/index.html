@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent AI Chat</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+            --message-bg-user: #e0e7ff;
+            --message-color-user: #1e40af;
+            --message-bg-ai: #f1f5f9;
+            --message-color-ai: #334155;
+            --container-bg: white;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --message-bg-user: #1e40af;
+            --message-color-user: #e0e7ff;
+            --message-bg-ai: #1e293b;
+            --message-color-ai: #f1f5f9;
+            --container-bg: #1a1f2e;
+            --border-color: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            transition: background-color 0.3s ease;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .chat-container {
+            flex: 1;
+            background: var(--container-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--message-bg-ai);
+        }
+
+        .new-chat-btn {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .chat-window {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .message.user {
+            margin-left: auto;
+            background: var(--message-bg-user);
+            color: var(--message-color-user);
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message.ai {
+            margin-right: auto;
+            background: var(--message-bg-ai);
+            color: var(--message-color-ai);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(1rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-container {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--container-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            resize: none;
+            min-height: 2.5rem;
+            max-height: 10rem;
+            transition: all 0.2s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .send-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .agent-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .agent-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--container-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 100%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(2rem);
+            transition: all 0.3s ease;
+        }
+
+        .agent-modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .agent-card {
+            background: var(--message-bg-ai);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px var(--shadow-color);
+        }
+
+        .agent-avatar {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .agent-description {
+            font-size: 0.875rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        .agent-traits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .agent-trait {
+            padding: 0.25rem 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: var(--message-bg-ai);
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .typing-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            background: var(--text-color);
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-0.25rem); }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    <div class="app-container">
+        <div class="chat-container">
+            <div class="header">
+                <h1>Multi-Agent AI Chat</h1>
+            </div>
+            
+            <div class="tabs-container" id="tabs-container">
+                <button class="new-chat-btn" onclick="showAgentSelector()">
+                    <span>+</span> New Chat
+                </button>
+            </div>
+            
+            <div id="chat-panels" class="chat-panels"></div>
+        </div>
+    </div>
+
+    <div class="agent-modal" id="agent-modal">
+        <div class="modal-content">
+            <h2>Select an Agent</h2>
+            <div class="agent-grid" id="agent-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let sessions = {};
+        let activeSessionId = null;
+        let agents = [];
+        let isProcessing = false;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            initTheme();
+            await loadAgents();
+            loadSavedSessions();
+        }
+
+        function toggleTheme() {
+            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', document.body.dataset.theme);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = savedTheme;
+        }
+
+        async function loadAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const data = await response.json();
+                agents = data.agents;
+                console.log('Loaded agents:', agents);
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                showError('Failed to load agent profiles');
+            }
+        }
+
+        function loadSavedSessions() {
+            const savedSessionIds = JSON.parse(localStorage.getItem('chatSessionIds') || '[]');
+            
+            if (savedSessionIds.length > 0) {
+                savedSessionIds.forEach(sessionId => loadSession(sessionId));
+            } else {
+                showAgentSelector();
+            }
+        }
+
+        async function loadSession(sessionId) {
+            try {
+                const response = await fetch(`/api/session?session_id=${sessionId}`);
+                if (!response.ok) throw new Error('Failed to load session');
+                
+                const data = await response.json();
+                createChatPanel(data.session_id, data.agent);
+                
+                // Load message history
+                data.messages.forEach(msg => {
+                    displayMessage(msg.content, msg.role === 'user' ? 'user' : 'ai', sessionId);
+                });
+                
+                activateSession(sessionId);
+            } catch (error) {
+                console.error('Error loading session:', error);
+                showError('Failed to load chat session');
+            }
+        }
+
+        function showAgentSelector() {
+            const modal = document.getElementById('agent-modal');
+            const agentGrid = document.getElementById('agent-grid');
+            
+            agentGrid.innerHTML = '';
+            
+            if (!agents || !Array.isArray(agents) || agents.length === 0) {
+                showError('No agents available. Please try again later.');
+                return;
+            }
+            
+            agents.forEach(agent => {
+                const card = document.createElement('div');
+                card.className = 'agent-card';
+                card.onclick = () => selectAgent(agent.id);
+                
+                card.innerHTML = `
+                    <div class="agent-avatar">${agent.avatar}</div>
+                    <div class="agent-name">${agent.name}</div>
+                    <div class="agent-description">${agent.description}</div>
+                    <div class="agent-traits">
+                        ${agent.traits.map(trait => `<span class="agent-trait">${trait}</span>`).join('')}
+                    </div>
+                `;
+                
+                agentGrid.appendChild(card);
+            });
+            
+            modal.classList.add('active');
+        }
+
+        function hideAgentSelector() {
+            document.getElementById('agent-modal').classList.remove('active');
+        }
+
+        async function selectAgent(agentId) {
+            try {
+                const response = await fetch('/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: agentId })
+                });
+                
+                const data = await response.json();
+                createChatPanel(data.session_id, data.agent);
+                activateSession(data.session_id);
+                
+                // Save session ID
+                const savedSessionIds = JSON.parse(localStorage.getItem('chatSessionIds') || '[]');
+                savedSessionIds.push(data.session_id);
+                localStorage.setItem('chatSessionIds', JSON.stringify(savedSessionIds));
+                
+                hideAgentSelector();
+            } catch (error) {
+                console.error('Error creating session:', error);
+                showError('Failed to create chat session');
+            }
+        }
+
+        function createChatPanel(sessionId, agent) {
+            // Create tab
+            const tabsContainer = document.getElementById('tabs-container');
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.onclick = () => activateSession(sessionId);
+            tab.innerHTML = `
+                <span>${agent.avatar}</span>
+                <span>${agent.name}</span>
+                <button onclick="closeSession('${sessionId}')" class="close-btn">×</button>
+            `;
+            tabsContainer.appendChild(tab);
+
+            // Create chat panel
+            const panelsContainer = document.getElementById('chat-panels');
+            const panel = document.createElement('div');
+            panel.className = 'chat-panel';
+            panel.id = `panel-${sessionId}`;
+            panel.innerHTML = `
+                <div class="chat-window" id="chat-window-${sessionId}"></div>
+                <div class="input-container">
+                    <textarea
+                        class="message-input"
+                        id="input-${sessionId}"
+                        placeholder="Type your message..."
+                        rows="1"
+                        onkeydown="handleKeyPress(event, '${sessionId}')"
+                    ></textarea>
+                    <button class="send-btn" onclick="sendMessage('${sessionId}')" disabled>
+                        <span>Send</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            panelsContainer.appendChild(panel);
+
+            // Setup input handlers
+            const input = document.getElementById(`input-${sessionId}`);
+            const sendBtn = panel.querySelector('.send-btn');
+
+            input.addEventListener('input', () => {
+                sendBtn.disabled = !input.value.trim();
+                adjustTextareaHeight(input);
+            });
+        }
+
+        function adjustTextareaHeight(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function activateSession(sessionId) {
+            // Deactivate current session
+            if (activeSessionId) {
+                document.querySelector(`#panel-${activeSessionId}`).style.display = 'none';
+                document.querySelector(`[onclick*="${activeSessionId}"]`).classList.remove('active');
+            }
+
+            // Activate new session
+            document.querySelector(`#panel-${sessionId}`).style.display = 'block';
+            document.querySelector(`[onclick*="${sessionId}"]`).classList.add('active');
+            
+            activeSessionId = sessionId;
+            document.getElementById(`input-${sessionId}`).focus();
+        }
+
+        async function closeSession(sessionId) {
+            if (!confirm('Close this chat?')) return;
+
+            try {
+                await fetch(`/api/session?session_id=${sessionId}`, { method: 'DELETE' });
+                
+                // Remove from DOM
+                document.querySelector(`[onclick*="${sessionId}"]`).remove();
+                document.querySelector(`#panel-${sessionId}`).remove();
+                
+                // Remove from storage
+                const savedSessionIds = JSON.parse(localStorage.getItem('chatSessionIds') || '[]');
+                localStorage.setItem(
+                    'chatSessionIds',
+                    JSON.stringify(savedSessionIds.filter(id => id !== sessionId))
+                );
+                
+                // Activate another session or show agent selector
+                const remainingTabs = document.querySelectorAll('.tab');
+                if (remainingTabs.length > 0) {
+                    const nextSessionId = remainingTabs[0].onclick.toString().match(/activateSession\('(.+?)'\)/)[1];
+                    activateSession(nextSessionId);
+                } else {
+                    showAgentSelector();
+                }
+            } catch (error) {
+                console.error('Error closing session:', error);
+                showError('Failed to close chat session');
+            }
+        }
+
+        function handleKeyPress(event, sessionId) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage(sessionId);
+            }
+        }
+
+        async function sendMessage(sessionId) {
+            if (isProcessing) return;
+            
+            const input = document.getElementById(`input-${sessionId}`);
+            const message = input.value.trim();
+            if (!message) return;
+            
+            isProcessing = true;
+            const sendBtn = document.querySelector(`#panel-${sessionId} .send-btn`);
+            sendBtn.disabled = true;
+            
+            try {
+                displayMessage(message, 'user', sessionId);
+                showTypingIndicator(sessionId);
+                input.value = '';
+                adjustTextareaHeight(input);
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        session_id: sessionId
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to send message');
+                const data = await response.json();
+                
+                hideTypingIndicator(sessionId);
+                displayMessage(data.response, 'ai', sessionId);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                hideTypingIndicator(sessionId);
+                showError('Failed to send message');
+            } finally {
+                isProcessing = false;
+                sendBtn.disabled = false;
+            }
+        }
+
+        function displayMessage(content, role, sessionId) {
+            const chatWindow = document.getElementById(`chat-window-${sessionId}`);
+            const message = document.createElement('div');
+            message.className = `message ${role}`;
+            message.textContent = content;
+            chatWindow.appendChild(message);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function showTypingIndicator(sessionId) {
+            const chatWindow = document.getElementById(`chat-window-${sessionId}`);
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator';
+            indicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatWindow.appendChild(indicator);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function hideTypingIndicator(sessionId) {
+            const indicator = document.querySelector(`#chat-window-${sessionId} .typing-indicator`);
+            if (indicator) indicator.remove();
+        }
+
+        function showError(message) {
+            // Implement error notification
+            alert(message);
+        }
+    </script>
+</body>
+</html>
