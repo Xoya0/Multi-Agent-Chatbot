@@ -6,7 +6,7 @@ A sophisticated chat application powered by neural networks, featuring dynamic a
 
 This repository contains large data files that are not included in the Git repository due to size limitations. To obtain the complete dataset:
 
-1. Download the movie quotes dataset files from [our data repository](#) (link to be provided)
+1. Download the movie quotes dataset files 
 2. Place the downloaded files in the `data/` directory:
    - `moviequotes.memorable_nonmemorable_pairs.txt`
    - `moviequotes.memorable_quotes.txt`
