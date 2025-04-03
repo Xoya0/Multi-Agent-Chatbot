@@ -1,4 +1,0 @@
-data/README.v1.0.txt filter=lfs diff=lfs merge=lfs -text
-data/moviequotes.memorable_nonmemorable_pairs.txt filter=lfs diff=lfs merge=lfs -text
-data/moviequotes.memorable_quotes.txt filter=lfs diff=lfs merge=lfs -text
-data/moviequotes.scripts.txt filter=lfs diff=lfs merge=lfs -text
