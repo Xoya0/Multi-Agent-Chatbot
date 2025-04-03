@@ -2,6 +2,16 @@
 
 A sophisticated chat application powered by neural networks, featuring dynamic agent personalities, advanced session management, and comprehensive analytics.
 
+## Important Note
+
+This repository contains large data files that are not included in the Git repository due to size limitations. To obtain the complete dataset:
+
+1. Download the movie quotes dataset files from [our data repository](#) (link to be provided)
+2. Place the downloaded files in the `data/` directory:
+   - `moviequotes.memorable_nonmemorable_pairs.txt`
+   - `moviequotes.memorable_quotes.txt`
+   - `moviequotes.scripts.txt`
+
 ## Features
 
 - **Dynamic Agent Personalities**: Customizable chat agents with distinct personality traits and behavior parameters
